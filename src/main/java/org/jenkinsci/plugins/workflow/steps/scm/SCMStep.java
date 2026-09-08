@@ -163,32 +163,21 @@ public abstract class SCMStep extends Step {
                 Files.deleteIfExists(changelogFile.toPath());
                 changelogFile = null;
             }
-            SCMRevisionState pollingBaseline = null;
-            if (poll) {
-                pollingBaseline = scm.calcRevisionsFromBuild(run, workspace, launcher, listener);
-                if (pollingBaseline != null) {
+            SCMRevisionState baselineAfterCheckout = null;
+            if (poll || changelog) {
+                baselineAfterCheckout = scm.calcRevisionsFromBuild(run, workspace, launcher, listener);
+                if (baselineAfterCheckout != null) {
                     synchronized (run) {
                         MultiSCMRevisionState state = run.getAction(MultiSCMRevisionState.class);
                         if (state == null) {
                             state = new MultiSCMRevisionState();
                             run.addAction(state);
                         }
-                        state.add(scm, pollingBaseline);
-                    }
-                }
-            } else if (changelog) {
-                SCMRevisionState changelogBaseline = scm.calcRevisionsFromBuild(run, workspace, launcher, listener);
-                if (changelogBaseline != null) {
-                    synchronized (run) {
-                        MultiSCMRevisionState state = run.getAction(MultiSCMRevisionState.class);
-                        if (state == null) {
-                            state = new MultiSCMRevisionState();
-                            run.addAction(state);
-                        }
-                        state.add(scm, changelogBaseline);
+                        state.add(scm, baselineAfterCheckout);
                     }
                 }
             }
+            SCMRevisionState pollingBaseline = poll ? baselineAfterCheckout : null;
             for (SCMListener l : SCMListener.all()) {
                 try {
                     l.onCheckout(run, scm, workspace, listener, changelogFile, pollingBaseline);
