@@ -164,16 +164,28 @@ public abstract class SCMStep extends Step {
                 changelogFile = null;
             }
             SCMRevisionState pollingBaseline = null;
-            if (poll || changelog) {
+            if (poll) {
                 pollingBaseline = scm.calcRevisionsFromBuild(run, workspace, launcher, listener);
                 if (pollingBaseline != null) {
                     synchronized (run) {
-                    MultiSCMRevisionState state = run.getAction(MultiSCMRevisionState.class);
-                    if (state == null) {
-                        state = new MultiSCMRevisionState();
-                        run.addAction(state);
+                        MultiSCMRevisionState state = run.getAction(MultiSCMRevisionState.class);
+                        if (state == null) {
+                            state = new MultiSCMRevisionState();
+                            run.addAction(state);
+                        }
+                        state.add(scm, pollingBaseline);
                     }
-                    state.add(scm, pollingBaseline);
+                }
+            } else if (changelog) {
+                SCMRevisionState changelogBaseline = scm.calcRevisionsFromBuild(run, workspace, launcher, listener);
+                if (changelogBaseline != null) {
+                    synchronized (run) {
+                        MultiSCMRevisionState state = run.getAction(MultiSCMRevisionState.class);
+                        if (state == null) {
+                            state = new MultiSCMRevisionState();
+                            run.addAction(state);
+                        }
+                        state.add(scm, changelogBaseline);
                     }
                 }
             }
